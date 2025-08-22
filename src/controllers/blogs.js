@@ -1,9 +1,35 @@
 const router = require('express').Router()
-const { Blog } = require('../models')
+const { Blog, User } = require('../models')
+const { Op } = require('sequelize')
 
 // GET /api/blogs
 router.get('/', async (req, res) => {
-  const blogs = await Blog.findAll()
+  const where = {}
+
+  if (req.query.search) {
+    where[Op.or] = [
+      {
+        title: {
+          [Op.iLike]: `%${req.query.search}%`
+        }
+      },
+      {
+        author: {
+          [Op.iLike]: `%${req.query.search}%`
+        }
+      }
+    ]
+  }
+
+  const blogs = await Blog.findAll({
+    include: {
+      model: User,
+      attributes: ['name']
+    },
+    where,
+    order: [['likes', 'DESC']]
+  })
+  
   res.json(blogs)
 })
 
@@ -27,17 +53,13 @@ router.delete('/:id', async (req, res) => {
 // PUT /api/blogs/:id
 router.put('/:id', async (req, res) => {
   const blog = await Blog.findByPk(req.params.id)
-  if (!blog) {
-    return res.status(404).json({ error: 'blog not found' })
+  if (blog) {
+    blog.likes = req.body.likes
+    await blog.save()
+    res.json(blog)
+  } else {
+    res.status(404).end()
   }
-
-  if (typeof req.body.likes !== 'number') {
-    return res.status(400).json({ error: 'likes must be a number' })
-  }
-
-  blog.likes = req.body.likes
-  await blog.save()
-  res.json(blog)
 })
 
 module.exports = router
