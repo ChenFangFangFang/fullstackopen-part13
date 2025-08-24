@@ -28,7 +28,6 @@ User.init({
       }
     }
   },
-  // 在实际应用中应该使用加密密码，这里简化处理
   password: {
     type: DataTypes.STRING,
     allowNull: false
