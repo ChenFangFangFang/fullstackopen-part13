@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const { User, Blog } = require('../models')
+const { User, Blog, Reading } = require('../models')
 
 // GET /api/users
 router.get('/', async (req, res) => {
@@ -10,6 +10,53 @@ router.get('/', async (req, res) => {
     }
   })
   res.json(users)
+})
+
+// GET /api/users/:id
+router.get('/:id', async (req, res) => {
+  const readStatus = req.query.read
+  const where = { user_id: req.params.id }
+  
+  if (readStatus === 'true' || readStatus === 'false') {
+    where.read = readStatus === 'true'
+  }
+
+  const user = await User.findByPk(req.params.id, {
+    attributes: ['name', 'username'],
+    include: {
+      model: Blog,
+      as: 'readings',
+      through: { attributes: [] },
+      attributes: ['id', 'url', 'title', 'author', 'likes', 'year'],
+      include: {
+        model: Reading,
+        as: 'readinglists',
+        attributes: ['id', 'read'],
+        where,
+        required: true
+      }
+    }
+  })
+
+  if (!user) {
+    return res.status(404).end()
+  }
+
+  const formattedUser = {
+    name: user.name,
+    username: user.username,
+    readings: user.readings.map(blog => ({
+      id: blog.id,
+      url: blog.url,
+      title: blog.title,
+      author: blog.author,
+      likes: blog.likes,
+      year: blog.year,
+      readinglists: blog.readinglists || []
+    }))
+  }
+
+  res.json(formattedUser)
 })
 
 // POST /api/users
