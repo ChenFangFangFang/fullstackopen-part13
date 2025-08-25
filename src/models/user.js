@@ -14,27 +14,25 @@ User.init({
     unique: true,
     allowNull: false,
     validate: {
-      isEmail: {
-        msg: "Username must be a valid email address"
-      }
+      isEmail: true
     }
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: "Name cannot be empty"
-      }
-    }
+    allowNull: false
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  disabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   sequelize,
   underscored: true,
+  timestamps: true,
   modelName: 'user'
 })
 
